@@ -1,0 +1,90 @@
+Data Summary Sheet
+
+The Data Summary worksheet provides the configuration and source information used to generate the Verification Report. It serves as a reference sheet for understanding the scope and baseline of the report generation.
+
+The sheet includes:
+
+Input Search Tags
+
+Lists the search tags, queries, or filters used to identify the artifacts included in the report.
+
+Traceability Files Used
+
+Identifies the traceability configuration files, mapping files, or source datasets used during report generation.
+
+Artifact Revision Labels
+
+Displays the revision labels, baselines, or versions of the artifacts that were used to generate the report.
+Provides traceability to the exact artifact revisions analyzed.
+Suggested Draft Text
+
+The Data Summary worksheet provides the report generation context and baseline information. It contains the input search tags used to select artifacts, the traceability files utilized during report generation, and the revision labels of the artifacts included in the analysis. This information allows reviewers to verify the scope, source data, and artifact versions used to produce the verification results, ensuring report reproducibility and auditability.
+
+You can then continue the report description with:
+
+Data Summary - Report inputs and artifact baselines.
+Trace Reports - Verification of end-to-end traceability.
+Regression Reports - Verification status of regression activities.
+Exception Reports - Identification of traceability gaps and issues requiring resolution.
+
+
+Verification Report Workbook
+
+The Verification Report is generated as an Excel workbook containing multiple worksheets. Each worksheet provides verification evidence, traceability status, coverage analysis, regression status, or exception details for a specific artifact type.
+
+Report Sheets
+
+Data Summary
+
+Overall verification and traceability statistics.
+Provides a high-level status of verification coverage.
+
+HLT End-to-End Trace Report
+
+Verifies end-to-end traceability for High-Level Tests.
+Confirms linkage between requirements and corresponding test artifacts.
+
+LLT End-to-End Trace Report
+
+Verifies end-to-end traceability for Low-Level Tests.
+Ensures complete traceability from low-level requirements to test cases.
+
+HSI Report
+
+Verification status of HSI requirements and associated links.
+
+HLRT Report
+
+Verification status of High-Level Requirements Traceability.
+
+ES37 Report
+
+Verification information for ES37-specific requirements and tests.
+
+LLT CUTE Report
+
+Verification results and traceability for CUTE-based low-level testing.
+
+LLT CTT Report
+
+Verification results and traceability for CTT-based low-level testing.
+
+HSI Regression Report
+
+Regression verification status for HSI requirements.
+
+HLRT Regression Report
+
+Regression verification status for High-Level Requirements.
+
+ES37 Regression Report
+
+Regression verification status for ES37 artifacts.
+
+HLR Exception Report
+
+Lists missing, incomplete, or invalid verification links related to High-Level Requirements.
+
+LLR Exception Report
+
+Lists missing, incomplete, or invalid verification links related to Low-Level Requirements.
