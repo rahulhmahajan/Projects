@@ -75,3 +75,35 @@ Lists missing, incomplete, or invalid verification links related to Low-Level Re
 | ES37 Regression Report      | Regression status for ES37 artifacts                                     |
 | HLR Exception Report        | Missing or invalid traceability links related to High-Level Requirements |
 | LLR Exception Report        | Missing or invalid traceability links related to Low-Level Requirements  |
+
+
+If the HLT End-to-End Trace Report is the master traceability view, your description should be broader than just HLT coverage.
+
+HLT End-to-End Trace Report
+
+HLT End-to-End Trace Report provides a comprehensive end-to-end traceability view across the development lifecycle. It serves as the primary traceability report by consolidating relationships between High-Level Requirements (HLR), Low-Level Requirements (LLR), and High-Level Tests (HLT). The report verifies that:
+
+Each HLR is allocated to one or more LLRs.
+Each LLR is fully traced back to its parent HLR.
+Appropriate HLTs exist to verify the requirements.
+Traceability links are complete and consistent throughout the requirement-to-test chain.
+Coverage gaps, orphaned artifacts, and missing links can be identified through a single consolidated view.
+
+As a result, the HLT End-to-End Trace Report acts as the master traceability sheet, enabling reviewers to assess requirement decomposition, test coverage, and overall traceability compliance in one place.
+
+You could similarly describe the others as:
+
+LLT End-to-End Trace Report: Focuses on detailed verification traceability, ensuring HLR → LLR → LLT linkage is complete.
+HLR Exception Report: Identifies HLRs with missing downstream links, missing verification, or traceability anomalies.
+LLR Exception Report: Identifies LLRs lacking parent HLR linkage, implementation linkage, or corresponding test coverage.
+Data Summary: Provides overall traceability statistics, coverage percentages, and exception counts across all reports.
+
+For a review procedure, I would recommend:
+
+Review Data Summary.
+Review HLT End-to-End Trace Report as the primary/master traceability report.
+Review LLT End-to-End Trace Report for detailed test coverage.
+Review Regression Reports.
+Review Exception Reports and resolve all findings.
+
+This ordering follows how most reviewers assess traceability: Summary → Master Traceability → Detailed Traceability → Exceptions.
