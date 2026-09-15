@@ -107,3 +107,28 @@ Review Regression Reports.
 Review Exception Reports and resolve all findings.
 
 This ordering follows how most reviewers assess traceability: Summary → Master Traceability → Detailed Traceability → Exceptions.
+
+
+# Design Report Workbook
+
+## Data Summary
+
+The Data Summary worksheet provides the report generation context and baseline information.
+
+### Contents
+- Input search tags
+- Traceability files used
+- Artifact revision labels
+- Summary statistics
+
+## Top To Bottom Report
+
+Provides downward traceability from higher-level design artifacts to lower-level artifacts.
+
+## End To End Report
+
+Provides complete traceability across the design hierarchy and serves as the master traceability view.
+
+## Exception Report
+
+Identifies missing or invalid traceability relationships.
