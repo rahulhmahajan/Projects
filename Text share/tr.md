@@ -132,3 +132,62 @@ Provides complete traceability across the design hierarchy and serves as the mas
 ## Exception Report
 
 Identifies missing or invalid traceability relationships.
+
+Design Report Workbook
+
+The Design Report is generated as an Excel workbook containing multiple worksheets that provide design traceability, coverage, and exception analysis. Each worksheet focuses on a specific aspect of the design verification process.
+
+1. Data Summary
+
+The Data Summary worksheet provides the report generation context and baseline information. It includes:
+
+Input search tags used to identify the design artifacts.
+Traceability files used during report generation.
+Revision labels or baselines of the design artifacts included in the analysis.
+Summary statistics related to design traceability and coverage.
+
+Purpose:
+ Provides reviewers with the scope, source data, and artifact versions used to generate the report.
+
+2. Top To Bottom Report
+
+The Top To Bottom Report provides a downward traceability view from higher-level design artifacts to lower-level artifacts.
+
+The report enables reviewers to:
+
+Verify decomposition of high-level design elements.
+Confirm that all parent artifacts are properly allocated to child artifacts.
+Identify missing or incomplete downstream traceability.
+Assess design coverage across all hierarchy levels.
+
+Purpose:
+ Ensures that every higher-level design artifact is fully decomposed and traced to lower-level design artifacts.
+
+3. End To End Report
+
+The End To End Report provides a complete traceability chain across the design hierarchy.
+
+The report enables reviewers to:
+
+Verify end-to-end linkage between all applicable design artifacts.
+Confirm that traceability relationships are complete.
+Validate that no breaks exist in the traceability chain.
+Review overall design coverage from top-level artifacts through detailed design elements.
+
+Purpose:
+ Acts as the primary or master traceability view by providing a consolidated end-to-end traceability assessment.
+
+4. Exception Report
+
+The Exception Report identifies traceability issues and missing relationships within the design hierarchy.
+
+The report typically highlights:
+
+Artifacts with missing parent links.
+Artifacts with missing child links.
+Orphaned artifacts.
+Incomplete traceability chains.
+Other rule violations detected during report generation.
+
+Purpose:
+ Allows reviewers to quickly identify and resolve traceability gaps and compliance issues.
