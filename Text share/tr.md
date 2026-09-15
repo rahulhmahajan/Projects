@@ -59,3 +59,19 @@ Lists missing, incomplete, or invalid verification links related to High-Level R
 LLR Exception Report
 
 Lists missing, incomplete, or invalid verification links related to Low-Level Requirements.
+
+| Sheet Name                  | Purpose                                                                  |
+| --------------------------- | ------------------------------------------------------------------------ |
+| Data Summary                | High-level summary of traceability status and metrics                    |
+| HLT End-to-End Trace Report | Traceability from High-Level Test cases through linked artifacts         |
+| LLT End-to-End Trace Report | Traceability from Low-Level Test cases through linked artifacts          |
+| HSI Report                  | Hardware/High-Level Specification traceability report                    |
+| HLRT Report                 | High-Level Requirement Traceability report                               |
+| ES37 Report                 | Project-specific traceability report (if applicable)                     |
+| LLT CUTE Report             | Low-Level Test traceability and CUTE execution information               |
+| LLT CTT Report              | Low-Level Test traceability and CTT coverage information                 |
+| HSI Regression Report       | Regression traceability status for HSI artifacts                         |
+| HLRT Regression Report      | Regression traceability status for HLR artifacts                         |
+| ES37 Regression Report      | Regression status for ES37 artifacts                                     |
+| HLR Exception Report        | Missing or invalid traceability links related to High-Level Requirements |
+| LLR Exception Report        | Missing or invalid traceability links related to Low-Level Requirements  |
