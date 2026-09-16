@@ -213,6 +213,7 @@ This instruction applies to all users responsible for traceability verification,
 | Project Lead          | Review and approve generated reports          |
 
 
+
 4. Prerequisites
 
 Before using TraceFinder, ensure:
@@ -334,6 +335,8 @@ The tool may generate:
 
 
 9. Error Handling
+
+
 | Error                     | Action                       |
 | ------------------------- | ---------------------------- |
 | No Results Found          | Verify search tag            |
@@ -342,7 +345,8 @@ The tool may generate:
 | Report Generation Failed  | Check server logs and retry  |
 | Database Connection Error | Contact support team         |
 
-Verification Checklist
+
+10.Verification Checklist
 
 Before closing the activity:
 
