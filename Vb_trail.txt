@@ -1,42 +1,58 @@
-Sub RemoveExcludedRows(wsSource As Worksheet, _
-                       wsExcluded As Worksheet, _
-                       excludeList As Variant)
+Option Explicit
+
+Private Const EXCLUDE_PATH As String = _
+    "/Build_Files"
+
+Private Sub Prc_Processing_Click()
+
+    RemoveExcludedRows _
+        Sheets("GR5"), _
+        Sheets("GR5_Discarded_Item")
+
+    MsgBox "Processing Complete"
+
+End Sub
+
+
+Function IsExcluded(ByVal pathValue As String) As Boolean
+
+    If InStr(1, pathValue, EXCLUDE_PATH, vbTextCompare) > 0 Then
+        IsExcluded = True
+    Else
+        IsExcluded = False
+    End If
+
+End Function
+
+
+Sub RemoveExcludedRows(ByVal wsSource As Worksheet, _
+                       ByVal wsExcluded As Worksheet)
 
     Dim lastRow As Long
     Dim targetRow As Long
     Dim r As Long
-    Dim item As Variant
     Dim pathValue As String
-    Dim isExcluded As Boolean
 
+    'Find last used row in source sheet
     lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
 
+    'Find next available row in excluded sheet
     targetRow = wsExcluded.Cells(wsExcluded.Rows.Count, 1).End(xlUp).Row + 1
 
-    'Loop from bottom to top
+    'Process from bottom to top
     For r = lastRow To 2 Step -1
 
-        pathValue = Trim(wsSource.Cells(r, 1).Value)
+        pathValue = CStr(wsSource.Cells(r, 1).Value)
 
-        isExcluded = False
+        If IsExcluded(pathValue) Then
 
-        For Each item In excludeList
-
-            If StrComp(pathValue, Trim(item), vbTextCompare) = 0 Then
-
-                isExcluded = True
-                Exit For
-
-            End If
-
-        Next item
-
-        If isExcluded Then
-
-            wsSource.Rows(r).Copy wsExcluded.Rows(targetRow)
+            'Copy row
+            wsSource.Rows(r).Copy _
+                Destination:=wsExcluded.Rows(targetRow)
 
             targetRow = targetRow + 1
 
+            'Delete row from source
             wsSource.Rows(r).Delete
 
         End If
@@ -45,21 +61,34 @@ Sub RemoveExcludedRows(wsSource As Worksheet, _
 
 End Sub
 
+----ot2
+Dim excludeList As Variant
+
+excludeList = Array( _
+    "/Trent_XWB/070_Software_Components/Build_Files", _
+    "/Trent_XWB/070_Software_Components/Test_Files", _
+    "/Trent_XWB/070_Software_Components/Temp_Files" _
+)
+
+RemoveExcludedRows Sheets("GR5"), _
+                   Sheets("GR5_Discarded_Item"), _
+                   excludeList
+
+
 
 
 Function IsExcluded(ByVal pathValue As String, _
-                    ByVal excludeDict As Object) As Boolean
+                    ByVal excludeList As Variant) As Boolean
 
-    Dim parts() As String
-    Dim part As Variant
+    Dim item As Variant
 
-    parts = Split(pathValue, "/")
+    For Each item In excludeList
 
-    For Each part In parts
-        If excludeDict.Exists(part) Then
+        If InStr(1, pathValue, item, vbTextCompare) > 0 Then
             IsExcluded = True
             Exit Function
         End If
-    Next part
+
+    Next item
 
 End Function
