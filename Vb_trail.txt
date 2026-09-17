@@ -1,0 +1,117 @@
+Private Sub CommandButton1_Click()
+
+Dim fd As FileDialog
+
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+
+With fd
+
+    .Title = "Select First Text File"
+
+    .Filters.Clear
+
+    .Filters.Add "Text Files", "*.txt"
+
+    If .Show = -1 Then
+
+        TextBox1.Text = .SelectedItems(1)
+
+    End If
+
+End With
+
+
+End Sub
+
+Private Sub CommandButton2_Click()
+Dim fd As FileDialog
+
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+
+With fd
+
+    .Title = "Select First Text File"
+
+    .Filters.Clear
+
+    .Filters.Add "Text Files", "*.txt"
+
+    If .Show = -1 Then
+
+        TextBox2.Text = .SelectedItems(1)
+
+    End If
+
+End With
+End Sub
+
+
+Private Sub CommandButton3_Click()
+
+    Dim userInput As String
+
+    userInput = TextBox1.Value   'or TextBox1.Text
+
+    MsgBox "You entered: " & userInput
+    ImportTextFile TextBox1.Value, Sheets("GR5")
+    
+    ImportTextFile TextBox1.Value, Sheets("GR6")
+    
+End Sub
+
+
+Sub ImportTextFile(ByVal L_file_path As String, L_ws As Worksheet)
+
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim fileNo As Integer
+    Dim lineText As String
+    Dim dataArr() As String
+    Dim rowNum As Long
+    Dim colNum As Long
+
+    Set ws = L_ws
+
+    filePath = TextBox1.Value
+
+    If Dir(filePath) = "" Then
+        MsgBox "File not found."
+        Exit Sub
+    End If
+
+    ws.Cells.Clear
+
+    fileNo = FreeFile
+    Open filePath For Input As #fileNo
+
+    rowNum = 1
+
+    Do Until EOF(fileNo)
+
+        Line Input #fileNo, lineText
+
+        dataArr = Split(lineText, vbTab)
+
+        For colNum = LBound(dataArr) To UBound(dataArr)
+
+            'Revision column (2nd column)
+            If colNum = 1 Then
+                ws.Cells(rowNum, colNum + 1).NumberFormat = "@"
+                ws.Cells(rowNum, colNum + 1).Value = "'" & dataArr(colNum)
+            Else
+                ws.Cells(rowNum, colNum + 1).Value = dataArr(colNum)
+            End If
+
+        Next colNum
+
+        rowNum = rowNum + 1
+
+    Loop
+
+    Close #fileNo
+
+    ws.Columns.AutoFit
+
+    MsgBox "Import Complete"
+
+End Sub
