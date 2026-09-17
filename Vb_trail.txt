@@ -1,117 +1,46 @@
-Private Sub CommandButton1_Click()
+Sub RemoveExcludedRows(wsSource As Worksheet, _
+                       wsExcluded As Worksheet, _
+                       excludeList As Variant)
 
-Dim fd As FileDialog
+    Dim lastRow As Long
+    Dim targetRow As Long
+    Dim r As Long
+    Dim item As Variant
+    Dim pathValue As String
+    Dim isExcluded As Boolean
 
-Set fd = Application.FileDialog(msoFileDialogFilePicker)
+    lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
 
-With fd
+    targetRow = wsExcluded.Cells(wsExcluded.Rows.Count, 1).End(xlUp).Row + 1
 
-    .Title = "Select First Text File"
+    'Loop from bottom to top
+    For r = lastRow To 2 Step -1
 
-    .Filters.Clear
+        pathValue = Trim(wsSource.Cells(r, 1).Value)
 
-    .Filters.Add "Text Files", "*.txt"
+        isExcluded = False
 
-    If .Show = -1 Then
+        For Each item In excludeList
 
-        TextBox1.Text = .SelectedItems(1)
+            If StrComp(pathValue, Trim(item), vbTextCompare) = 0 Then
 
-    End If
+                isExcluded = True
+                Exit For
 
-End With
-
-
-End Sub
-
-Private Sub CommandButton2_Click()
-Dim fd As FileDialog
-
-Set fd = Application.FileDialog(msoFileDialogFilePicker)
-
-With fd
-
-    .Title = "Select First Text File"
-
-    .Filters.Clear
-
-    .Filters.Add "Text Files", "*.txt"
-
-    If .Show = -1 Then
-
-        TextBox2.Text = .SelectedItems(1)
-
-    End If
-
-End With
-End Sub
-
-
-Private Sub CommandButton3_Click()
-
-    Dim userInput As String
-
-    userInput = TextBox1.Value   'or TextBox1.Text
-
-    MsgBox "You entered: " & userInput
-    ImportTextFile TextBox1.Value, Sheets("GR5")
-    
-    ImportTextFile TextBox1.Value, Sheets("GR6")
-    
-End Sub
-
-
-Sub ImportTextFile(ByVal L_file_path As String, L_ws As Worksheet)
-
-    Dim ws As Worksheet
-    Dim filePath As String
-    Dim fileNo As Integer
-    Dim lineText As String
-    Dim dataArr() As String
-    Dim rowNum As Long
-    Dim colNum As Long
-
-    Set ws = L_ws
-
-    filePath = TextBox1.Value
-
-    If Dir(filePath) = "" Then
-        MsgBox "File not found."
-        Exit Sub
-    End If
-
-    ws.Cells.Clear
-
-    fileNo = FreeFile
-    Open filePath For Input As #fileNo
-
-    rowNum = 1
-
-    Do Until EOF(fileNo)
-
-        Line Input #fileNo, lineText
-
-        dataArr = Split(lineText, vbTab)
-
-        For colNum = LBound(dataArr) To UBound(dataArr)
-
-            'Revision column (2nd column)
-            If colNum = 1 Then
-                ws.Cells(rowNum, colNum + 1).NumberFormat = "@"
-                ws.Cells(rowNum, colNum + 1).Value = "'" & dataArr(colNum)
-            Else
-                ws.Cells(rowNum, colNum + 1).Value = dataArr(colNum)
             End If
 
-        Next colNum
+        Next item
 
-        rowNum = rowNum + 1
+        If isExcluded Then
 
-    Loop
+            wsSource.Rows(r).Copy wsExcluded.Rows(targetRow)
 
-    Close #fileNo
+            targetRow = targetRow + 1
 
-    ws.Columns.AutoFit
+            wsSource.Rows(r).Delete
 
-    MsgBox "Import Complete"
+        End If
+
+    Next r
 
 End Sub
