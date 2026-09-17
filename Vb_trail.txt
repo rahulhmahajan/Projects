@@ -135,3 +135,29 @@ Sub CreateFileNameColumn()
     Next i
 
 End Sub
+
+-------------------------
+Sub ApplyVLookup()
+
+    Dim ws As Worksheet
+    Dim lookupWs As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+
+    Set ws = Sheets("Sheet1")          ' destination sheet
+    Set lookupWs = Sheets("Lookup")    ' lookup sheet
+
+    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
+
+    For i = 6 To lastRow
+
+        ws.Cells(i, "H").Formula = _
+            "=IFERROR(VLOOKUP(B" & i & ",'" & lookupWs.Name & _
+            "'!B:C,2,FALSE),"""")"
+
+    Next i
+
+    ' Convert formulas to values (optional)
+    ws.Range("H6:H" & lastRow).Value = ws.Range("H6:H" & lastRow).Value
+
+End Sub
