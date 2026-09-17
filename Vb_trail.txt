@@ -65,9 +65,7 @@ End Sub
 Dim excludeList As Variant
 
 excludeList = Array( _
-    "/Trent_XWB/070_Software_Components/Build_Files", _
-    "/Trent_XWB/070_Software_Components/Test_Files", _
-    "/Trent_XWB/070_Software_Components/Temp_Files" _
+
 )
 
 RemoveExcludedRows Sheets("GR5"), _
@@ -92,3 +90,48 @@ Function IsExcluded(ByVal pathValue As String, _
     Next item
 
 End Function
+
+-----------------------------------
+Sub CreateFileNameColumn()
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim pathText As String
+    Dim fileName As String
+    Dim prefix As String
+    Dim parts() As String
+
+    Set ws = ActiveSheet
+
+    ' Insert new column C
+    ws.Columns("C").Insert Shift:=xlToRight
+
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    For i = 6 To lastRow
+
+        pathText = Trim(ws.Cells(i, "A").Value)
+
+        If pathText <> "" Then
+
+            parts = Split(pathText, "/")
+            fileName = parts(UBound(parts))
+
+            prefix = ""
+
+            If InStr(1, LCase(pathText), "control") > 0 Then
+                prefix = "Control#"
+            ElseIf InStr(1, LCase(pathText), "common") > 0 Then
+                prefix = "Common#"
+            ElseIf InStr(1, LCase(pathText), "safety") > 0 Then
+                prefix = "Safety#"
+            End If
+
+            ws.Cells(i, "C").Value = prefix & fileName
+
+        End If
+
+    Next i
+
+End Sub
