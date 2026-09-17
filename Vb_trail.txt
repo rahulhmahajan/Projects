@@ -222,3 +222,34 @@ Sub CreateUniqueFileList()
     MsgBox dict.Count & " unique filenames copied."
 
 End Sub
+------------------
+Sub CompareColumns()
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+
+    Set ws = Sheets("Result")
+
+    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
+
+    ws.Range("D1").Value = "Status"
+
+    For i = 2 To lastRow
+
+        If Trim(ws.Cells(i, "B").Value) = Trim(ws.Cells(i, "C").Value) Then
+
+            ws.Cells(i, "D").Value = "Same"
+            ws.Cells(i, "D").Interior.Color = RGB(0, 255, 0)   'Green
+
+        Else
+
+            ws.Cells(i, "D").Value = "Mismatch"
+            ws.Cells(i, "D").Interior.Color = RGB(255, 0, 0)   'Red
+            ws.Cells(i, "D").Font.Color = RGB(255, 255, 255)   'White text
+
+        End If
+
+    Next i
+
+End Sub
