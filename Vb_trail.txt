@@ -161,3 +161,64 @@ Sub ApplyVLookup()
     ws.Range("H6:H" & lastRow).Value = ws.Range("H6:H" & lastRow).Value
 
 End Sub
+
+-----------
+
+Sub CreateUniqueFileList()
+
+    Dim wsGR5 As Worksheet
+    Dim wsGR6 As Worksheet
+    Dim wsResult As Worksheet
+    Dim dict As Object
+    Dim lastRow As Long
+    Dim i As Long
+    Dim key As String
+    Dim outRow As Long
+
+    Set wsGR5 = Sheets("GR5")
+    Set wsGR6 = Sheets("GR6")
+    Set wsResult = Sheets("Result")
+
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    'Clear result sheet
+    wsResult.Cells.Clear
+
+    'Heading
+    wsResult.Range("A1").Value = "FileName"
+
+    'Read GR5
+    lastRow = wsGR5.Cells(wsGR5.Rows.Count, "B").End(xlUp).Row
+
+    For i = 6 To lastRow
+        key = Trim(wsGR5.Cells(i, "B").Value)
+        If key <> "" Then
+            If Not dict.Exists(key) Then
+                dict.Add key, ""
+            End If
+        End If
+    Next i
+
+    'Read GR6
+    lastRow = wsGR6.Cells(wsGR6.Rows.Count, "B").End(xlUp).Row
+
+    For i = 6 To lastRow
+        key = Trim(wsGR6.Cells(i, "B").Value)
+        If key <> "" Then
+            If Not dict.Exists(key) Then
+                dict.Add key, ""
+            End If
+        End If
+    Next i
+
+    'Write unique values to Result sheet
+    outRow = 2
+
+    For Each key In dict.Keys
+        wsResult.Cells(outRow, "A").Value = key
+        outRow = outRow + 1
+    Next key
+
+    MsgBox dict.Count & " unique filenames copied."
+
+End Sub
