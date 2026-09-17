@@ -44,3 +44,22 @@ Sub RemoveExcludedRows(wsSource As Worksheet, _
     Next r
 
 End Sub
+
+
+
+Function IsExcluded(ByVal pathValue As String, _
+                    ByVal excludeDict As Object) As Boolean
+
+    Dim parts() As String
+    Dim part As Variant
+
+    parts = Split(pathValue, "/")
+
+    For Each part In parts
+        If excludeDict.Exists(part) Then
+            IsExcluded = True
+            Exit Function
+        End If
+    Next part
+
+End Function
