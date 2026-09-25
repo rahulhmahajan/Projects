@@ -253,3 +253,39 @@ Sub CompareColumns()
     Next i
 
 End Sub
+---------------------------------------------------------------------------------------------------------------------
+Public Function ImportTextFile(ws As Worksheet, _
+                               FilePath As String, _
+                               DestCell As String) As Boolean
+    On Error GoTo ErrHandler
+
+    With ws
+
+        'Format Column B as Text
+        .Columns("B:B").NumberFormat = "@"
+
+        With .QueryTables.Add( _
+            Connection:="TEXT;" & FilePath, _
+            Destination:=.Range(DestCell))
+
+            .TextFileParseType = xlDelimited
+            .TextFileTabDelimiter = True
+
+            'Column 1 = General
+            'Column 2 = Text
+            .TextFileColumnDataTypes = Array(1, 2)
+
+            .Refresh BackgroundQuery:=False
+            .Delete
+
+        End With
+
+    End With
+
+    ImportTextFile = True
+    Exit Function
+
+ErrHandler:
+    ImportTextFile = False
+End Function
+---------------------------------------------------------------------------------------------------------------------
