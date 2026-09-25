@@ -289,3 +289,50 @@ ErrHandler:
     ImportTextFile = False
 End Function
 ---------------------------------------------------------------------------------------------------------------------
+
+
+Sub RemoveMatchingRowsFast()
+
+    Dim ws As Worksheet
+    Dim lookupWs As Worksheet
+    Dim dict As Object
+    Dim lastRow As Long
+    Dim lookupLastRow As Long
+    Dim i As Long
+    Dim key As Variant
+    Dim txt As String
+
+    Set ws = Worksheets("Data")
+    Set lookupWs = Worksheets("Lookup")
+
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    lookupLastRow = lookupWs.Cells(lookupWs.Rows.Count, "A").End(xlUp).Row
+
+    For i = 1 To lookupLastRow
+        dict(UCase(Trim(lookupWs.Cells(i, "A").Value))) = True
+    Next i
+
+    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
+
+    For i = 2 To lastRow
+
+        txt = UCase(ws.Cells(i, "B").Value)
+
+        For Each key In dict.Keys
+            If InStr(txt, key) > 0 Then
+                ws.Cells(i, "Z").Value = "DELETE"
+                Exit For
+            End If
+        Next key
+
+    Next i
+
+    ws.Range("A1:Z" & lastRow).AutoFilter Field:=26, Criteria1:="DELETE"
+
+    ws.Range("A2:Z" & lastRow).SpecialCells(xlCellTypeVisible).EntireRow.Delete
+
+    ws.AutoFilterMode = False
+
+End Sub
+--------------------------------------------------------------------------------
