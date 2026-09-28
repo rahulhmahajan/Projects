@@ -336,3 +336,41 @@ Sub RemoveMatchingRowsFast()
 
 End Sub
 --------------------------------------------------------------------------------
+Sub GetTxtFilesRecursive()
+
+    Dim fd As FileDialog
+    Dim FolderPath As String
+
+    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
+
+    If fd.Show <> -1 Then Exit Sub
+
+    FolderPath = fd.SelectedItems(1)
+    
+    GetFiles FolderPath
+
+End Sub
+
+Sub GetFiles(ByVal FolderPath As String)
+
+    Dim fso As Object, fld As Object, sf As Object, fil As Object
+    Static R As Long
+
+    If R = 0 Then R = 1
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set fld = fso.GetFolder(FolderPath)
+
+    For Each fil In fld.Files
+        If LCase(fso.GetExtensionName(fil.Name)) = "txt" Then
+            Cells(R, 1).Value = fil.Path
+            R = R + 1
+        End If
+    Next fil
+
+    For Each sf In fld.SubFolders
+        GetFiles sf.Path
+    Next sf
+
+End Sub
+
