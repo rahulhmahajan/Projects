@@ -373,4 +373,87 @@ Sub GetFiles(ByVal FolderPath As String)
     Next sf
 
 End Sub
+------------------------------------------------------------------------------------
+
+
+
+import re
+import csv
+
+input_file = "spark_report.txt"
+output_file = "spark_report.csv"
+
+current_file = ""
+current_category = ""
+
+with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+
+    writer = csv.writer(csvfile)
+
+    writer.writerow([
+        "Category",
+        "File",
+        "Occurrence",
+        "Type",
+        "Code",
+        "Message"
+    ])
+
+    with open(input_file, "r", encoding="utf-8", errors="ignore") as infile:
+
+        for line in infile:
+
+            line = line.rstrip()
+
+            # Capture section headers
+            if "Warnings local to files being SPARKed" in line:
+                current_category = "Warnings"
+                continue
+
+            elif "Flow warnings local to files being SPARKed" in line:
+                current_category = "Flow Warnings"
+                continue
+
+            elif "Errors local to files being SPARKed" in line:
+                current_category = "Errors"
+                continue
+
+            elif "Flow errors local to files being SPARKed" in line:
+                current_category = "Flow Errors"
+                continue
+
+            # Capture file path
+            file_match = re.search(
+                r'([A-Z]:\\.*\.(?:LSB|LSS))',
+                line,
+                re.I
+            )
+
+            if file_match:
+                current_file = file_match.group(1)
+                continue
+
+            # Capture issue lines
+            issue_match = re.search(
+                r'[\*\?\-!]+\s*\(\s*(\d+)\s*\)\s*'
+                r'(Warning|Flow Error|Semantic Error)'
+                r'\s*:\s*(\d+)'
+                r'\s*:\s*(.*)',
+                line
+            )
+
+            if issue_match:
+
+                writer.writerow([
+                    current_category,
+                    current_file,
+                    issue_match.group(1),
+                    issue_match.group(2),
+                    issue_match.group(3),
+                    issue_match.group(4).strip()
+                ])
+
+print("Completed")
+
+
 
