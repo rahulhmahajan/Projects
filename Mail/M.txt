@@ -1,0 +1,16 @@
+
+
+Thanks for reviewing the TraceFinder output and sharing the observations.
+
+The differences you have highlighted are generally in line with the known limitations and assumptions that were already expected during the TraceFinder evaluation.
+
+In particular:
+
+The tag IP scope is known to contain discrepancies, with some tags incorrectly identified as modified/new. As noted, these items were already excluded from the test plan scope and were therefore expected to create mismatches when comparing directly against the TraceFinder results.
+Differences arising from requirement re-allocation, engineering judgement applied during test planning, and default regression tests are also expected, as these activities are not always directly traceable through the change-impact analysis performed by the tool.
+For LLT CUTE and LLT CTT, the observed gaps are consistent with the current TraceFinder approach of identifying impacted items through modified requirements/trace relationships. The tool is not expected to replicate the full test-plan methodology where additional tests are selected based on design-level assessment and engineering judgement.
+
+Overall, the findings appear to align with the known limitations that were discussed beforehand, and we do not see any unexpected behaviour from the tool based on the examples provided.
+
+Thanks again for the detailed review.
+
