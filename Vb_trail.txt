@@ -456,4 +456,10 @@ with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
 print("Completed")
 
 
+No impact on design artefacts. We agree that requirement 0/SRS/NHP/851 is not currently allocated under the parent ValidateNHPreferred section, although it should have been included. The requirement exists in the Product Line NHP SRS; however, the applicability to the Trent XWB application has not been propagated into the Trent XWB NHP SRS. Inclusion of this requirement in the Trent XWB NHP SRS will have no impact on the implementation or design, as the corresponding functionality has already been fully implemented and verified. Refer to PR_1695 for further details and evidence of implementation.
+
+
+No impact on design artefacts. We agree that requirement 0/SRS/NHP/851 should be traced to the ValidateNHPreferred procedure. Although this requirement is not present in the current revision of the parent SRS_NHP (v6.2), the requirement exists within the Product Line NHP SRS and is applicable to the Trent XWB implementation. Therefore, the traceability to ValidateNHPreferred remains valid and should be maintained.
+
+The absence of the requirement in the current SRS revision is a documentation/traceability issue and does not impact the implemented design or code. The associated functionality has already been implemented and verified. Consequently, adding or reinstating the requirement allocation in the Trent XWB NHP SRS will have no impact on the design or implementation. Refer to PR_1695 for further details.
 
