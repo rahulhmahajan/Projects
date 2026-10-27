@@ -463,3 +463,93 @@ No impact on design artefacts. We agree that requirement 0/SRS/NHP/851 should be
 
 The absence of the requirement in the current SRS revision is a documentation/traceability issue and does not impact the implemented design or code. The associated functionality has already been implemented and verified. Consequently, adding or reinstating the requirement allocation in the Trent XWB NHP SRS will have no impact on the design or implementation. Refer to PR_1695 for further details.
 
+-------
+import win32com.client
+import os
+
+SOURCE_DOC = r"C:\Temp\Source.docx"
+REQ_LIST = r"C:\Temp\req_list.txt"
+OUTPUT_DOC = r"C:\Temp\Extracted_Requirements.docx"
+
+
+def load_req_ids(file_name):
+    with open(file_name, "r") as f:
+        return [line.strip() for line in f if line.strip()]
+
+
+def find_requirement_position(doc, req_id):
+    rng = doc.Content
+
+    find = rng.Find
+    find.ClearFormatting()
+
+    find.Text = req_id
+
+    if find.Execute():
+        return rng.Start
+
+    return None
+
+
+def main():
+
+    req_ids = load_req_ids(REQ_LIST)
+
+    word = win32com.client.Dispatch("Word.Application")
+    word.Visible = False
+
+    src_doc = word.Documents.Open(SOURCE_DOC)
+
+    new_doc = word.Documents.Add()
+
+    # Build list of all requirement locations
+    locations = []
+
+    for req_id in req_ids:
+
+        pos = find_requirement_position(src_doc, req_id)
+
+        if pos is not None:
+            locations.append((req_id, pos))
+        else:
+            print(f"NOT FOUND : {req_id}")
+
+    # Sort by document position
+    locations.sort(key=lambda x: x[1])
+
+    for idx, (req_id, start_pos) in enumerate(locations):
+
+        if idx < len(locations) - 1:
+            end_pos = locations[idx + 1][1]
+        else:
+            end_pos = src_doc.Content.End
+
+        print(f"Extracting {req_id}")
+
+        rng = src_doc.Range(Start=start_pos,
+                            End=end_pos)
+
+        rng.Copy()
+
+        dest_rng = new_doc.Range(
+            new_doc.Content.End - 1,
+            new_doc.Content.End - 1
+        )
+
+        dest_rng.Paste()
+
+        dest_rng.InsertParagraphAfter()
+        dest_rng.InsertParagraphAfter()
+
+    new_doc.SaveAs(OUTPUT_DOC)
+
+    src_doc.Close(False)
+    new_doc.Close(True)
+
+    word.Quit()
+
+    print("Done")
+
+
+if __name__ == "__main__":
+    main()
