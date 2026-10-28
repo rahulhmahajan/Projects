@@ -1,489 +1,30 @@
-Option Explicit
-
-Private Const EXCLUDE_PATH As String = _
-    "/Build_Files"
-
-Private Sub Prc_Processing_Click()
-
-    RemoveExcludedRows _
-        Sheets("GR5"), _
-        Sheets("GR5_Discarded_Item")
-
-    MsgBox "Processing Complete"
-
-End Sub
-
-
-Function IsExcluded(ByVal pathValue As String) As Boolean
-
-    If InStr(1, pathValue, EXCLUDE_PATH, vbTextCompare) > 0 Then
-        IsExcluded = True
-    Else
-        IsExcluded = False
-    End If
-
-End Function
-
-
-Sub RemoveExcludedRows(ByVal wsSource As Worksheet, _
-                       ByVal wsExcluded As Worksheet)
-
-    Dim lastRow As Long
-    Dim targetRow As Long
-    Dim r As Long
-    Dim pathValue As String
-
-    'Find last used row in source sheet
-    lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
-
-    'Find next available row in excluded sheet
-    targetRow = wsExcluded.Cells(wsExcluded.Rows.Count, 1).End(xlUp).Row + 1
-
-    'Process from bottom to top
-    For r = lastRow To 2 Step -1
-
-        pathValue = CStr(wsSource.Cells(r, 1).Value)
-
-        If IsExcluded(pathValue) Then
-
-            'Copy row
-            wsSource.Rows(r).Copy _
-                Destination:=wsExcluded.Rows(targetRow)
-
-            targetRow = targetRow + 1
-
-            'Delete row from source
-            wsSource.Rows(r).Delete
-
-        End If
-
-    Next r
-
-End Sub
-
-----ot2
-Dim excludeList As Variant
-
-excludeList = Array( _
-
-)
-
-RemoveExcludedRows Sheets("GR5"), _
-                   Sheets("GR5_Discarded_Item"), _
-                   excludeList
-
-
-
-
-Function IsExcluded(ByVal pathValue As String, _
-                    ByVal excludeList As Variant) As Boolean
-
-    Dim item As Variant
-
-    For Each item In excludeList
-
-        If InStr(1, pathValue, item, vbTextCompare) > 0 Then
-            IsExcluded = True
-            Exit Function
-        End If
-
-    Next item
-
-End Function
-
------------------------------------
-Sub CreateFileNameColumn()
-
-    Dim ws As Worksheet
-    Dim lastRow As Long
-    Dim i As Long
-    Dim pathText As String
-    Dim fileName As String
-    Dim prefix As String
-    Dim parts() As String
-
-    Set ws = ActiveSheet
-
-    ' Insert new column C
-    ws.Columns("C").Insert Shift:=xlToRight
-
-    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
-
-    For i = 6 To lastRow
-
-        pathText = Trim(ws.Cells(i, "A").Value)
-
-        If pathText <> "" Then
-
-            parts = Split(pathText, "/")
-            fileName = parts(UBound(parts))
-
-            prefix = ""
-
-            If InStr(1, LCase(pathText), "control") > 0 Then
-                prefix = "Control#"
-            ElseIf InStr(1, LCase(pathText), "common") > 0 Then
-                prefix = "Common#"
-            ElseIf InStr(1, LCase(pathText), "safety") > 0 Then
-                prefix = "Safety#"
-            End If
-
-            ws.Cells(i, "C").Value = prefix & fileName
-
-        End If
-
-    Next i
-
-End Sub
-
--------------------------
-Sub ApplyVLookup()
-
-    Dim ws As Worksheet
-    Dim lookupWs As Worksheet
-    Dim lastRow As Long
-    Dim i As Long
-
-    Set ws = Sheets("Sheet1")          ' destination sheet
-    Set lookupWs = Sheets("Lookup")    ' lookup sheet
-
-    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
-
-    For i = 6 To lastRow
-
-        ws.Cells(i, "H").Formula = _
-            "=IFERROR(VLOOKUP(B" & i & ",'" & lookupWs.Name & _
-            "'!B:C,2,FALSE),"""")"
-
-    Next i
-
-    ' Convert formulas to values (optional)
-    ws.Range("H6:H" & lastRow).Value = ws.Range("H6:H" & lastRow).Value
-
-End Sub
-
------------
-
-Sub CreateUniqueFileList()
-
-    Dim wsGR5 As Worksheet
-    Dim wsGR6 As Worksheet
-    Dim wsResult As Worksheet
-    Dim dict As Object
-    Dim lastRow As Long
-    Dim i As Long
-    Dim key As String
-    Dim outRow As Long
-
-    Set wsGR5 = Sheets("GR5")
-    Set wsGR6 = Sheets("GR6")
-    Set wsResult = Sheets("Result")
-
-    Set dict = CreateObject("Scripting.Dictionary")
-
-    'Clear result sheet
-    wsResult.Cells.Clear
-
-    'Heading
-    wsResult.Range("A1").Value = "FileName"
-
-    'Read GR5
-    lastRow = wsGR5.Cells(wsGR5.Rows.Count, "B").End(xlUp).Row
-
-    For i = 6 To lastRow
-        key = Trim(wsGR5.Cells(i, "B").Value)
-        If key <> "" Then
-            If Not dict.Exists(key) Then
-                dict.Add key, ""
-            End If
-        End If
-    Next i
-
-    'Read GR6
-    lastRow = wsGR6.Cells(wsGR6.Rows.Count, "B").End(xlUp).Row
-
-    For i = 6 To lastRow
-        key = Trim(wsGR6.Cells(i, "B").Value)
-        If key <> "" Then
-            If Not dict.Exists(key) Then
-                dict.Add key, ""
-            End If
-        End If
-    Next i
-
-    'Write unique values to Result sheet
-    outRow = 2
-
-    For Each key In dict.Keys
-        wsResult.Cells(outRow, "A").Value = key
-        outRow = outRow + 1
-    Next key
-
-    MsgBox dict.Count & " unique filenames copied."
-
-End Sub
-------------------
-Sub CompareColumns()
-
-    Dim ws As Worksheet
-    Dim lastRow As Long
-    Dim i As Long
-
-    Set ws = Sheets("Result")
-
-    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
-
-    ws.Range("D1").Value = "Status"
-
-    For i = 2 To lastRow
-
-        If Trim(ws.Cells(i, "B").Value) = Trim(ws.Cells(i, "C").Value) Then
-
-            ws.Cells(i, "D").Value = "Same"
-            ws.Cells(i, "D").Interior.Color = RGB(0, 255, 0)   'Green
-
-        Else
-
-            ws.Cells(i, "D").Value = "Mismatch"
-            ws.Cells(i, "D").Interior.Color = RGB(255, 0, 0)   'Red
-            ws.Cells(i, "D").Font.Color = RGB(255, 255, 255)   'White text
-
-        End If
-
-    Next i
-
-End Sub
----------------------------------------------------------------------------------------------------------------------
-Public Function ImportTextFile(ws As Worksheet, _
-                               FilePath As String, _
-                               DestCell As String) As Boolean
-    On Error GoTo ErrHandler
-
-    With ws
-
-        'Format Column B as Text
-        .Columns("B:B").NumberFormat = "@"
-
-        With .QueryTables.Add( _
-            Connection:="TEXT;" & FilePath, _
-            Destination:=.Range(DestCell))
-
-            .TextFileParseType = xlDelimited
-            .TextFileTabDelimiter = True
-
-            'Column 1 = General
-            'Column 2 = Text
-            .TextFileColumnDataTypes = Array(1, 2)
-
-            .Refresh BackgroundQuery:=False
-            .Delete
-
-        End With
-
-    End With
-
-    ImportTextFile = True
-    Exit Function
-
-ErrHandler:
-    ImportTextFile = False
-End Function
----------------------------------------------------------------------------------------------------------------------
-
-
-Sub RemoveMatchingRowsFast()
-
-    Dim ws As Worksheet
-    Dim lookupWs As Worksheet
-    Dim dict As Object
-    Dim lastRow As Long
-    Dim lookupLastRow As Long
-    Dim i As Long
-    Dim key As Variant
-    Dim txt As String
-
-    Set ws = Worksheets("Data")
-    Set lookupWs = Worksheets("Lookup")
-
-    Set dict = CreateObject("Scripting.Dictionary")
-
-    lookupLastRow = lookupWs.Cells(lookupWs.Rows.Count, "A").End(xlUp).Row
-
-    For i = 1 To lookupLastRow
-        dict(UCase(Trim(lookupWs.Cells(i, "A").Value))) = True
-    Next i
-
-    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
-
-    For i = 2 To lastRow
-
-        txt = UCase(ws.Cells(i, "B").Value)
-
-        For Each key In dict.Keys
-            If InStr(txt, key) > 0 Then
-                ws.Cells(i, "Z").Value = "DELETE"
-                Exit For
-            End If
-        Next key
-
-    Next i
-
-    ws.Range("A1:Z" & lastRow).AutoFilter Field:=26, Criteria1:="DELETE"
-
-    ws.Range("A2:Z" & lastRow).SpecialCells(xlCellTypeVisible).EntireRow.Delete
-
-    ws.AutoFilterMode = False
-
-End Sub
---------------------------------------------------------------------------------
-Sub GetTxtFilesRecursive()
-
-    Dim fd As FileDialog
-    Dim FolderPath As String
-
-    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
-
-    If fd.Show <> -1 Then Exit Sub
-
-    FolderPath = fd.SelectedItems(1)
-    
-    GetFiles FolderPath
-
-End Sub
-
-Sub GetFiles(ByVal FolderPath As String)
-
-    Dim fso As Object, fld As Object, sf As Object, fil As Object
-    Static R As Long
-
-    If R = 0 Then R = 1
-
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set fld = fso.GetFolder(FolderPath)
-
-    For Each fil In fld.Files
-        If LCase(fso.GetExtensionName(fil.Name)) = "txt" Then
-            Cells(R, 1).Value = fil.Path
-            R = R + 1
-        End If
-    Next fil
-
-    For Each sf In fld.SubFolders
-        GetFiles sf.Path
-    Next sf
-
-End Sub
-------------------------------------------------------------------------------------
-
-
-
 import re
-import csv
-
-input_file = "spark_report.txt"
-output_file = "spark_report.csv"
-
-current_file = ""
-current_category = ""
-
-with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-
-    writer = csv.writer(csvfile)
-
-    writer.writerow([
-        "Category",
-        "File",
-        "Occurrence",
-        "Type",
-        "Code",
-        "Message"
-    ])
-
-    with open(input_file, "r", encoding="utf-8", errors="ignore") as infile:
-
-        for line in infile:
-
-            line = line.rstrip()
-
-            # Capture section headers
-            if "Warnings local to files being SPARKed" in line:
-                current_category = "Warnings"
-                continue
-
-            elif "Flow warnings local to files being SPARKed" in line:
-                current_category = "Flow Warnings"
-                continue
-
-            elif "Errors local to files being SPARKed" in line:
-                current_category = "Errors"
-                continue
-
-            elif "Flow errors local to files being SPARKed" in line:
-                current_category = "Flow Errors"
-                continue
-
-            # Capture file path
-            file_match = re.search(
-                r'([A-Z]:\\.*\.(?:LSB|LSS))',
-                line,
-                re.I
-            )
-
-            if file_match:
-                current_file = file_match.group(1)
-                continue
-
-            # Capture issue lines
-            issue_match = re.search(
-                r'[\*\?\-!]+\s*\(\s*(\d+)\s*\)\s*'
-                r'(Warning|Flow Error|Semantic Error)'
-                r'\s*:\s*(\d+)'
-                r'\s*:\s*(.*)',
-                line
-            )
-
-            if issue_match:
-
-                writer.writerow([
-                    current_category,
-                    current_file,
-                    issue_match.group(1),
-                    issue_match.group(2),
-                    issue_match.group(3),
-                    issue_match.group(4).strip()
-                ])
-
-print("Completed")
-
-
-No impact on design artefacts. We agree that requirement 0/SRS/NHP/851 is not currently allocated under the parent ValidateNHPreferred section, although it should have been included. The requirement exists in the Product Line NHP SRS; however, the applicability to the Trent XWB application has not been propagated into the Trent XWB NHP SRS. Inclusion of this requirement in the Trent XWB NHP SRS will have no impact on the implementation or design, as the corresponding functionality has already been fully implemented and verified. Refer to PR_1695 for further details and evidence of implementation.
-
-
-No impact on design artefacts. We agree that requirement 0/SRS/NHP/851 should be traced to the ValidateNHPreferred procedure. Although this requirement is not present in the current revision of the parent SRS_NHP (v6.2), the requirement exists within the Product Line NHP SRS and is applicable to the Trent XWB implementation. Therefore, the traceability to ValidateNHPreferred remains valid and should be maintained.
-
-The absence of the requirement in the current SRS revision is a documentation/traceability issue and does not impact the implemented design or code. The associated functionality has already been implemented and verified. Consequently, adding or reinstating the requirement allocation in the Trent XWB NHP SRS will have no impact on the design or implementation. Refer to PR_1695 for further details.
-
--------
-import win32com.client
 import os
+import win32com.client
 
-SOURCE_DOC = r"C:\Temp\Source.docx"
+
+SOURCE_DOC = r"C:\Temp\Source.docm"
 REQ_LIST = r"C:\Temp\req_list.txt"
 OUTPUT_DOC = r"C:\Temp\Extracted_Requirements.docx"
 
+REQ_PATTERN = r"SafSWICD/\d+/\d+"
 
-def load_req_ids(file_name):
-    with open(file_name, "r") as f:
+
+def load_req_ids(filename):
+
+    with open(filename, "r", encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
 
 
-def find_requirement_position(doc, req_id):
+def find_req_start(doc, req_id):
+
     rng = doc.Content
 
     find = rng.Find
     find.ClearFormatting()
 
     find.Text = req_id
+    find.Forward = True
 
     if find.Execute():
         return rng.Start
@@ -491,64 +32,173 @@ def find_requirement_position(doc, req_id):
     return None
 
 
+def is_heading(paragraph):
+
+    try:
+        style_name = str(paragraph.Style)
+
+        if "Heading" in style_name:
+            return True
+
+    except:
+        pass
+
+    return False
+
+
+def is_requirement(text):
+
+    return re.match(REQ_PATTERN, text.strip()) is not None
+
+
+def find_req_end(doc, start_pos, current_req):
+
+    start_found = False
+
+    end_pos = doc.Content.End
+
+    for para in doc.Paragraphs:
+
+        para_start = para.Range.Start
+
+        if para_start < start_pos:
+            continue
+
+        text = para.Range.Text.strip()
+
+        #
+        # Skip the current requirement header
+        #
+        if not start_found:
+
+            if current_req in text:
+                start_found = True
+
+            continue
+
+        #
+        # Stop at next requirement
+        #
+        if is_requirement(text):
+
+            end_pos = para.Range.Start
+            break
+
+        #
+        # Stop at Info.
+        #
+        if text.lower() == "info.":
+
+            end_pos = para.Range.Start
+            break
+
+        #
+        # Stop at new section heading
+        #
+        if is_heading(para):
+
+            end_pos = para.Range.Start
+            break
+
+    return end_pos
+
+
+def append_range(target_doc, source_range):
+
+    dest = target_doc.Range(
+        target_doc.Content.End - 1,
+        target_doc.Content.End - 1
+    )
+
+    dest.FormattedText = source_range.FormattedText
+
+    target_doc.Range(
+        target_doc.Content.End - 1,
+        target_doc.Content.End - 1
+    ).InsertParagraphAfter()
+
+    target_doc.Range(
+        target_doc.Content.End - 1,
+        target_doc.Content.End - 1
+    ).InsertParagraphAfter()
+
+
 def main():
+
+    if not os.path.exists(SOURCE_DOC):
+        print("Document not found")
+        print(SOURCE_DOC)
+        return
 
     req_ids = load_req_ids(REQ_LIST)
 
     word = win32com.client.Dispatch("Word.Application")
+
     word.Visible = False
+    word.ScreenUpdating = False
+    word.DisplayAlerts = False
+
+    print("Opening document...")
 
     src_doc = word.Documents.Open(SOURCE_DOC)
+    out_doc = word.Documents.Add()
 
-    new_doc = word.Documents.Add()
-
-    # Build list of all requirement locations
-    locations = []
+    missing = []
 
     for req_id in req_ids:
 
-        pos = find_requirement_position(src_doc, req_id)
+        print("=" * 60)
+        print("Searching :", req_id)
 
-        if pos is not None:
-            locations.append((req_id, pos))
-        else:
-            print(f"NOT FOUND : {req_id}")
+        start_pos = find_req_start(src_doc, req_id)
 
-    # Sort by document position
-    locations.sort(key=lambda x: x[1])
+        if start_pos is None:
 
-    for idx, (req_id, start_pos) in enumerate(locations):
+            print("NOT FOUND")
 
-        if idx < len(locations) - 1:
-            end_pos = locations[idx + 1][1]
-        else:
-            end_pos = src_doc.Content.End
+            missing.append(req_id)
+            continue
 
-        print(f"Extracting {req_id}")
+        print("Found at:", start_pos)
 
-        rng = src_doc.Range(Start=start_pos,
-                            End=end_pos)
-
-        rng.Copy()
-
-        dest_rng = new_doc.Range(
-            new_doc.Content.End - 1,
-            new_doc.Content.End - 1
+        end_pos = find_req_end(
+            src_doc,
+            start_pos,
+            req_id
         )
 
-        dest_rng.Paste()
+        print("End position:", end_pos)
 
-        dest_rng.InsertParagraphAfter()
-        dest_rng.InsertParagraphAfter()
+        rng = src_doc.Range(
+            Start=start_pos,
+            End=end_pos - 1
+        )
 
-    new_doc.SaveAs(OUTPUT_DOC)
+        append_range(out_doc, rng)
+
+        print("Extracted :", req_id)
+
+    print()
+    print("Saving output...")
+
+    out_doc.SaveAs(OUTPUT_DOC)
 
     src_doc.Close(False)
-    new_doc.Close(True)
+    out_doc.Close(True)
 
     word.Quit()
 
-    print("Done")
+    print()
+    print("Completed")
+    print("Output :", OUTPUT_DOC)
+
+    if missing:
+
+        print()
+        print("Missing Requirements")
+
+        for req in missing:
+            print(req)
 
 
 if __name__ == "__main__":
