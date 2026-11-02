@@ -1,52 +1,32 @@
-import re
-import difflib
+html = """
+<html>
+<head>
+<style>
+body {font-family: Arial;}
+h2 {background:#ddd;padding:8px;}
+</style>
+</head>
+<body>
+<h1>Ada Comparison Report</h1>
+"""
 
+for file_name in common_files:
 
-def normalize_ada_file(file_path):
-    code_lines = []
+    code1 = normalize_ada_file(gr5_path)
+    code2 = normalize_ada_file(gr6_path)
 
-    with open(file_path, "r", encoding="utf-8") as f:
-        for line in f:
-            # Remove comments
-            line = re.sub(r'--.*$', '', line)
-
-            # Remove leading/trailing spaces
-            line = line.strip()
-
-            # Skip empty lines
-            if not line:
-                continue
-
-            # Skip pragma statements
-            if re.match(r'^\s*pragma\b', line, re.IGNORECASE):
-                continue
-
-            code_lines.append(line)
-
-    return code_lines
-
-
-def compare_ada_files(file1, file2):
-    code1 = normalize_ada_file(file1)
-    code2 = normalize_ada_file(file2)
-
-    if code1 == code2:
-        print("Files are identical (ignoring comments and pragmas)")
-        return
-
-    print("Differences found:\n")
-
-    diff = difflib.unified_diff(
+    diff_html = difflib.HtmlDiff().make_table(
         code1,
         code2,
-        fromfile=file1,
-        tofile=file2,
-        lineterm=""
+        fromdesc="GR5",
+        todesc="GR6",
+        context=True
     )
 
-    for line in diff:
-        print(line)
+    html += f"<h2>{file_name}</h2>"
+    html += diff_html
 
+html += "</body></html>"
 
-# Example
-compare_ada_files("old.adb", "new.adb")
+with open("Ada_Report.html", "w", encoding="utf-8") as f:
+    f.write(html)
