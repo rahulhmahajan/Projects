@@ -1,205 +1,52 @@
 import re
-import os
-import win32com.client
+import difflib
 
 
-SOURCE_DOC = r"C:\Temp\Source.docm"
-REQ_LIST = r"C:\Temp\req_list.txt"
-OUTPUT_DOC = r"C:\Temp\Extracted_Requirements.docx"
+def normalize_ada_file(file_path):
+    code_lines = []
 
-REQ_PATTERN = r"SafSWICD/\d+/\d+"
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            # Remove comments
+            line = re.sub(r'--.*$', '', line)
 
+            # Remove leading/trailing spaces
+            line = line.strip()
 
-def load_req_ids(filename):
+            # Skip empty lines
+            if not line:
+                continue
 
-    with open(filename, "r", encoding="utf-8") as f:
-        return [line.strip() for line in f if line.strip()]
+            # Skip pragma statements
+            if re.match(r'^\s*pragma\b', line, re.IGNORECASE):
+                continue
 
+            code_lines.append(line)
 
-def find_req_start(doc, req_id):
-
-    rng = doc.Content
-
-    find = rng.Find
-    find.ClearFormatting()
-
-    find.Text = req_id
-    find.Forward = True
-
-    if find.Execute():
-        return rng.Start
-
-    return None
+    return code_lines
 
 
-def is_heading(paragraph):
+def compare_ada_files(file1, file2):
+    code1 = normalize_ada_file(file1)
+    code2 = normalize_ada_file(file2)
 
-    try:
-        style_name = str(paragraph.Style)
-
-        if "Heading" in style_name:
-            return True
-
-    except:
-        pass
-
-    return False
-
-
-def is_requirement(text):
-
-    return re.match(REQ_PATTERN, text.strip()) is not None
-
-
-def find_req_end(doc, start_pos, current_req):
-
-    start_found = False
-
-    end_pos = doc.Content.End
-
-    for para in doc.Paragraphs:
-
-        para_start = para.Range.Start
-
-        if para_start < start_pos:
-            continue
-
-        text = para.Range.Text.strip()
-
-        #
-        # Skip the current requirement header
-        #
-        if not start_found:
-
-            if current_req in text:
-                start_found = True
-
-            continue
-
-        #
-        # Stop at next requirement
-        #
-        if is_requirement(text):
-
-            end_pos = para.Range.Start
-            break
-
-        #
-        # Stop at Info.
-        #
-        if text.lower() == "info.":
-
-            end_pos = para.Range.Start
-            break
-
-        #
-        # Stop at new section heading
-        #
-        if is_heading(para):
-
-            end_pos = para.Range.Start
-            break
-
-    return end_pos
-
-
-def append_range(target_doc, source_range):
-
-    dest = target_doc.Range(
-        target_doc.Content.End - 1,
-        target_doc.Content.End - 1
-    )
-
-    dest.FormattedText = source_range.FormattedText
-
-    target_doc.Range(
-        target_doc.Content.End - 1,
-        target_doc.Content.End - 1
-    ).InsertParagraphAfter()
-
-    target_doc.Range(
-        target_doc.Content.End - 1,
-        target_doc.Content.End - 1
-    ).InsertParagraphAfter()
-
-
-def main():
-
-    if not os.path.exists(SOURCE_DOC):
-        print("Document not found")
-        print(SOURCE_DOC)
+    if code1 == code2:
+        print("Files are identical (ignoring comments and pragmas)")
         return
 
-    req_ids = load_req_ids(REQ_LIST)
+    print("Differences found:\n")
 
-    word = win32com.client.Dispatch("Word.Application")
+    diff = difflib.unified_diff(
+        code1,
+        code2,
+        fromfile=file1,
+        tofile=file2,
+        lineterm=""
+    )
 
-    word.Visible = False
-    word.ScreenUpdating = False
-    word.DisplayAlerts = False
-
-    print("Opening document...")
-
-    src_doc = word.Documents.Open(SOURCE_DOC)
-    out_doc = word.Documents.Add()
-
-    missing = []
-
-    for req_id in req_ids:
-
-        print("=" * 60)
-        print("Searching :", req_id)
-
-        start_pos = find_req_start(src_doc, req_id)
-
-        if start_pos is None:
-
-            print("NOT FOUND")
-
-            missing.append(req_id)
-            continue
-
-        print("Found at:", start_pos)
-
-        end_pos = find_req_end(
-            src_doc,
-            start_pos,
-            req_id
-        )
-
-        print("End position:", end_pos)
-
-        rng = src_doc.Range(
-            Start=start_pos,
-            End=end_pos - 1
-        )
-
-        append_range(out_doc, rng)
-
-        print("Extracted :", req_id)
-
-    print()
-    print("Saving output...")
-
-    out_doc.SaveAs(OUTPUT_DOC)
-
-    src_doc.Close(False)
-    out_doc.Close(True)
-
-    word.Quit()
-
-    print()
-    print("Completed")
-    print("Output :", OUTPUT_DOC)
-
-    if missing:
-
-        print()
-        print("Missing Requirements")
-
-        for req in missing:
-            print(req)
+    for line in diff:
+        print(line)
 
 
-if __name__ == "__main__":
-    main()
+# Example
+compare_ada_files("old.adb", "new.adb")
