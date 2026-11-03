@@ -1,32 +1,21 @@
-html = """
-<html>
-<head>
-<style>
-body {font-family: Arial;}
-h2 {background:#ddd;padding:8px;}
-</style>
-</head>
-<body>
-<h1>Ada Comparison Report</h1>
-"""
+<div style="
+    background:#3a2d97;
+    color:white;
+    padding:20px;
+    border-radius:8px;
+    text-align:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);">
 
-for file_name in common_files:
+    <h1 style="margin:0;">
+        DV-GD Comparison Report
+    </h1>
 
-    code1 = normalize_ada_file(gr5_path)
-    code2 = normalize_ada_file(gr6_path)
+    <h3 style="margin-top:8px;color:#d8e1e6;">
+        {self.CPU}
+    </h3>
 
-    diff_html = difflib.HtmlDiff().make_table(
-        code1,
-        code2,
-        fromdesc="GR5",
-        todesc="GR6",
-        context=True
-    )
+    <p style="margin-top:10px;">
+        Generated On : 03-Nov-2026
+    </p>
 
-    html += f"<h2>{file_name}</h2>"
-    html += diff_html
-
-html += "</body></html>"
-
-with open("Ada_Report.html", "w", encoding="utf-8") as f:
-    f.write(html)
+</div>
