@@ -18,6 +18,8 @@ Expected folder layout:
 
 Everything printed to the CMD prompt is also shown in the log box.
 Look for the "# >>> MODIFY" markers for the places you are most likely to edit.
+
+Compatible with Python 3.5.2 (no f-strings; uses str.format instead).
 """
 
 # ----------------------------------------------------------------------------
@@ -193,7 +195,7 @@ class GR5vsGR6App:
         Use self.log("...") anywhere you want to add your own log messages.
         A plain print("...") works too.
         """
-        print(f"[{datetime.now():%H:%M:%S}] {message}")
+        print("[{0}] {1}".format(datetime.now().strftime("%H:%M:%S"), message))
 
     # ------------------------------------------------------------------
     # UI construction
@@ -388,25 +390,25 @@ class GR5vsGR6App:
         # The sub-folders of the root become the Build Type options.
         types = self._subdirs(path)
         if not types:
-            self.log(f"WARNING: no sub-folders found in {path}")
+            self.log("WARNING: no sub-folders found in {0}".format(path))
             messagebox.showwarning("No builds",
-                                   f"No sub-folders found in:\n{path}")
+                                   "No sub-folders found in:\n{0}".format(path))
             return
 
         self.reset()
         self.build_root = path
         self.area_label.config(text=path)
         self.type_cb.config(values=types, state="readonly")
-        self.log(f"Build area: {path}")
-        self.log(f"Build types found: {', '.join(types)}")
+        self.log("Build area: {0}".format(path))
+        self.log("Build types found: {0}".format(", ".join(types)))
 
     def on_type_selected(self, _event=None):
         """Step 2: a build type was chosen -> fill the GR5 / GR6 dropdowns."""
         type_path = os.path.join(self.build_root, self.type_var.get())
         builds = self._subdirs(type_path)
-        self.log(f"Build type '{self.type_var.get()}' selected: "
-                 f"{len(builds)} build(s) found.")
-        self.log(f"Builds: {', '.join(builds) if builds else '(none)'}")
+        self.log("Build type '{0}' selected: {1} build(s) found.".format(
+            self.type_var.get(), len(builds)))
+        self.log("Builds: {0}".format(", ".join(builds) if builds else "(none)"))
 
         # Clear any previous GR5 / GR6 choice and load the new list.
         # >>> MODIFY: if GR5 and GR6 should show different lists, build
@@ -444,15 +446,16 @@ class GR5vsGR6App:
         gr6_path = os.path.join(self.build_root, build_type, gr6)
 
         self.log("RUN clicked.")
-        self.log(f"gr5_path = {gr5_path}")
-        self.log(f"gr6_path = {gr6_path}")
+        self.log("gr5_path = {0}".format(gr5_path))
+        self.log("gr6_path = {0}".format(gr6_path))
 
         # --- Make sure both folders really exist ---
         for label, p in (("GR5", gr5_path), ("GR6", gr6_path)):
             if not os.path.isdir(p):
-                self.log(f"ERROR: {label} path does not exist: {p}")
-                messagebox.showerror("Path not found",
-                                     f"{label} path does not exist:\n{p}")
+                self.log("ERROR: {0} path does not exist: {1}".format(label, p))
+                messagebox.showerror(
+                    "Path not found",
+                    "{0} path does not exist:\n{1}".format(label, p))
                 return
 
         self.log("Paths verified.")
