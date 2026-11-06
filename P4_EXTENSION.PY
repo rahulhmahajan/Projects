@@ -1,0 +1,416 @@
+"""
+GR5 Vs GR6 - build selector GUI
+================================
+Flow:
+    1. "Select Build Area"  -> pick a root folder, e.g. D:\\Builds
+    2. Build Type dropdown  -> sub-folders of the root      (Release / Debug)
+    3. GR5 / GR6 dropdowns  -> sub-folders of the build type (Build_100, ...)
+    4. RUN                  -> builds gr5_path / gr6_path and verifies them,
+                               then the CMD window is shown and given focus
+
+The CMD window stays hidden while you work in the GUI. When RUN is pressed it
+is shown and brought to the front, and everything is printed there.
+
+Expected folder layout:
+    D:\\Builds
+    ├── Release
+    │   ├── Build_100
+    │   └── Build_101
+    └── Debug
+        ├── Build_100
+        └── Build_101
+
+Look for the "# >>> MODIFY" markers for the places you are most likely to edit.
+
+Compatible with Python 3.5.2 (no f-strings; uses str.format instead).
+"""
+
+# ----------------------------------------------------------------------------
+# Imports
+# ----------------------------------------------------------------------------
+import os                                   # path handling / folder listing
+import tkinter as tk                        # GUI toolkit
+from datetime import datetime               # timestamps in the console output
+import tkinter.font as tkfont               # fonts that can be resized live
+from tkinter import ttk, filedialog, messagebox
+
+# ----------------------------------------------------------------------------
+# Settings
+# ----------------------------------------------------------------------------
+# >>> MODIFY: set to False if you want the CMD window to stay visible
+#     from the start (it is then also not hidden / re-shown by the program).
+HIDE_CONSOLE = True
+
+
+# ============================================================================
+# Show / hide / focus the CMD window (Windows only)
+# ============================================================================
+def _console_hwnd():
+    """Return the window handle of the CMD window (0 if there is none)."""
+    if os.name != "nt":
+        return 0
+    try:
+        import ctypes
+        return ctypes.windll.kernel32.GetConsoleWindow()
+    except Exception:
+        return 0
+
+
+def set_console_visible(visible):
+    """Show or hide the CMD window this script was started from.
+
+    Does nothing on other systems, or when there is no console window
+    (for example when the script is run with pythonw.exe / a .pyw file).
+    """
+    hwnd = _console_hwnd()
+    if not hwnd:
+        return
+    try:
+        import ctypes
+        # ShowWindow: 0 = SW_HIDE, 5 = SW_SHOW
+        ctypes.windll.user32.ShowWindow(hwnd, 5 if visible else 0)
+    except Exception:
+        pass
+
+
+def focus_console():
+    """Show the CMD window (restoring it if minimized) and give it focus."""
+    hwnd = _console_hwnd()
+    if not hwnd:
+        return
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        user32.ShowWindow(hwnd, 9)          # SW_RESTORE: show + un-minimize
+        user32.SetForegroundWindow(hwnd)    # bring to front and focus it
+    except Exception:
+        pass
+
+
+# ============================================================================
+# Main application window
+# ============================================================================
+class GR5vsGR6App:
+    # ------------------------------------------------------------------
+    # Construction
+    # ------------------------------------------------------------------
+    def __init__(self, root):
+        self.root = root
+        self.root.title("GR5 Vs GR6")
+        # >>> MODIFY: window size (width x height)
+        self.root.geometry("600x400")
+
+        # Root folder chosen with "Select Build Area" (e.g. D:\Builds).
+        self.build_root = None
+
+        self._build_menu()
+
+        # Canvas that holds the gradient background and the white panel.
+        self.canvas = tk.Canvas(root, height=400, highlightthickness=0)
+        self.canvas.pack(side="top", fill="both", expand=True)
+        # Redraw the gradient whenever the window is resized.
+        self.canvas.bind("<Configure>", lambda e: self.draw_gradient())
+
+        self._build_panel()
+        self.draw_gradient()
+
+        self.log("Application started.")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def log(self, message):
+        """Print a timestamped line to the CMD window.
+
+        Use self.log("...") anywhere you want to add your own messages.
+        A plain print("...") works too.
+        """
+        print("[{0}] {1}".format(datetime.now().strftime("%H:%M:%S"), message))
+
+    # ------------------------------------------------------------------
+    # UI construction
+    # ------------------------------------------------------------------
+    def _build_menu(self):
+        """Create the Action / Edit / Help menu bar."""
+        menubar = tk.Menu(self.root)
+
+        # Action menu
+        action = tk.Menu(menubar, tearoff=0)
+        action.add_command(label="Select Build Area",
+                           command=self.select_build_area)
+        action.add_separator()
+        action.add_command(label="Exit", command=self.on_close)
+        menubar.add_cascade(label="Action", menu=action)
+
+        # Edit menu
+        edit = tk.Menu(menubar, tearoff=0)
+        edit.add_command(label="Reset", command=self.reset)
+        menubar.add_cascade(label="Edit", menu=edit)
+
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(
+            label="About",
+            command=lambda: messagebox.showinfo(
+                "About",
+                "GR5 Vs GR6\nSelect a GR5 build and a GR6 build to compare.",
+            ),
+        )
+        menubar.add_cascade(label="Help", menu=help_menu)
+
+        self.root.config(menu=menubar)
+
+    def _build_panel(self):
+        """Create the white panel with the buttons and dropdowns."""
+        # White box floating in the middle of the gradient.
+        self.panel = tk.Frame(self.canvas, bg="white", padx=6, pady=10)
+        self.canvas_window = self.canvas.create_window(
+            300, 200, window=self.panel, anchor="center"
+        )
+
+        # >>> MODIFY: base fonts (size shown here is used at the normal
+        #     600x400 size; they grow automatically when the window grows,
+        #     see _apply_scale)
+        self.font_label = tkfont.Font(family="Georgia", size=10, weight="bold")
+        self.font_small = tkfont.Font(family="Georgia", size=8)
+        self.font_entry = tkfont.Font(family="Georgia", size=9)
+        label_font = self.font_label
+
+        # --- "Select Build Area" button + the chosen path underneath ---
+        self.btn_area = tk.Button(
+            self.panel, text="Select Build Area", font=label_font,
+            bg="#fffacd", relief="solid", bd=2,        # bg: button colour
+            command=self.select_build_area,
+        )
+        self.btn_area.pack(pady=(0, 8))
+
+        self.area_label = tk.Label(self.panel, text="(none selected)",
+                                   bg="white", fg="#555", font=self.font_small)
+        self.area_label.pack()
+
+        # --- Dropdown 1: Build Type (Release / Debug) ---
+        self._label("Build Type", label_font)
+        self.type_var = tk.StringVar()
+        self.type_cb = ttk.Combobox(self.panel, textvariable=self.type_var,
+                                    state="disabled", width=28)
+        self.type_cb.pack()
+        # Selecting a build type fills the GR5 / GR6 dropdowns.
+        self.type_cb.bind("<<ComboboxSelected>>", self.on_type_selected)
+
+        # --- Dropdown 2: GR5 build ---
+        self._label("GR5 Build", label_font)
+        self.gr5_var = tk.StringVar()
+        self.gr5_cb = ttk.Combobox(self.panel, textvariable=self.gr5_var,
+                                   state="disabled", width=28)
+        self.gr5_cb.pack()
+
+        # --- Dropdown 3: GR6 build ---
+        self._label("GR6 Build", label_font)
+        self.gr6_var = tk.StringVar()
+        self.gr6_cb = ttk.Combobox(self.panel, textvariable=self.gr6_var,
+                                   state="disabled", width=28)
+        self.gr6_cb.pack()
+
+        # --- RUN button ---
+        self.btn_run = tk.Button(
+            self.panel, text="RUN", font=label_font, bg="#ccff66",
+            relief="solid", bd=2, width=6, command=self.run,
+        )
+        self.btn_run.pack(pady=(14, 0))
+
+    def _label(self, text, font):
+        """Small helper: a white label shown above a dropdown."""
+        tk.Label(self.panel, text=text, font=font, bg="white").pack(pady=(8, 2))
+
+    def draw_gradient(self):
+        """Draw a vertical gradient on the canvas."""
+        width = max(self.canvas.winfo_width(), 600)
+        height = max(self.canvas.winfo_height(), 400)
+        # >>> MODIFY: gradient colours (top -> bottom)
+        color1 = "#eeaabf"  # light pink
+        color2 = "#948be8"  # light purple
+
+        # Remove the old gradient before redrawing (needed on resize).
+        self.canvas.delete("gradient")
+
+        # For each horizontal line, interpolate between color1 and color2.
+        steps = height
+        r1, g1, b1 = self.root.winfo_rgb(color1)
+        r2, g2, b2 = self.root.winfo_rgb(color2)
+        for i in range(steps):
+            # winfo_rgb returns 16-bit values, so shift right by 8 to get
+            # 8-bit values (0-255) after blending.
+            r = int(r1 + (r2 - r1) * i / steps) >> 8
+            g = int(g1 + (g2 - g1) * i / steps) >> 8
+            b = int(b1 + (b2 - b1) * i / steps) >> 8
+            hex_color = "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+            self.canvas.create_line(0, i, width, i,
+                                    fill=hex_color, tags="gradient")
+
+        # Keep the gradient behind the panel and keep the panel centred.
+        self.canvas.tag_lower("gradient")
+        self.canvas.coords(self.canvas_window, width // 2, height // 2)
+
+        # Resize the panel contents to match the new window size.
+        self._apply_scale(width, height)
+
+    def _apply_scale(self, width, height):
+        """Scale the white panel (fonts, dropdown width, padding, RUN button)
+        with the window size, so it grows when the window is maximized.
+
+        >>> MODIFY: MAX_SCALE limits how large the panel can grow, and the
+        base numbers (28, 6, 10 ...) are the sizes at the normal 600x400.
+        """
+        if not hasattr(self, "font_label"):     # panel not built yet
+            return
+        MAX_SCALE = 2.5
+        scale = min(width / 600, height / 400)  # compare with the base size
+        scale = max(1.0, min(scale, MAX_SCALE))
+
+        self.font_label.configure(size=int(10 * scale))
+        self.font_small.configure(size=int(8 * scale))
+        self.font_entry.configure(size=int(9 * scale))
+
+        # Dropdown width is measured in characters.
+        for cb in (self.type_cb, self.gr5_cb, self.gr6_cb):
+            cb.config(width=int(28 * scale), font=self.font_entry)
+
+        self.btn_run.config(width=int(6 * scale))
+        self.panel.config(padx=int(6 * scale), pady=int(10 * scale))
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _subdirs(path):
+        """Return a sorted list of the sub-folder names inside `path`.
+
+        Files are ignored. Returns an empty list if the folder cannot be read.
+        """
+        try:
+            return sorted(
+                d for d in os.listdir(path)
+                if os.path.isdir(os.path.join(path, d))
+            )
+        except OSError:
+            return []
+
+    def reset(self):
+        """Clear all selections and disable the dropdowns (Edit > Reset)."""
+        for var in (self.type_var, self.gr5_var, self.gr6_var):
+            var.set("")
+        for cb in (self.type_cb, self.gr5_cb, self.gr6_cb):
+            cb.config(values=[], state="disabled")
+        self.build_root = None
+        self.area_label.config(text="(none selected)")
+
+    # ------------------------------------------------------------------
+    # Actions (button / dropdown handlers)
+    # ------------------------------------------------------------------
+    def select_build_area(self):
+        """Step 1: ask for the root folder and fill the Build Type dropdown."""
+        path = filedialog.askdirectory(title="Select Build Area",
+                                       mustexist=True)
+        if not path:                        # user pressed Cancel
+            return
+        path = os.path.normpath(path)       # e.g. D:/Builds -> D:\Builds
+
+        # The sub-folders of the root become the Build Type options.
+        types = self._subdirs(path)
+        if not types:
+            messagebox.showwarning("No builds",
+                                   "No sub-folders found in:\n{0}".format(path))
+            return
+
+        self.reset()
+        self.build_root = path
+        self.area_label.config(text=path)
+        self.type_cb.config(values=types, state="readonly")
+
+    def on_type_selected(self, _event=None):
+        """Step 2: a build type was chosen -> fill the GR5 / GR6 dropdowns."""
+        type_path = os.path.join(self.build_root, self.type_var.get())
+        builds = self._subdirs(type_path)
+
+        # Clear any previous GR5 / GR6 choice and load the new list.
+        # >>> MODIFY: if GR5 and GR6 should show different lists, build
+        #     separate lists here instead of reusing `builds` for both.
+        self.gr5_var.set("")
+        self.gr6_var.set("")
+        self.gr5_cb.config(values=builds, state="readonly")
+        self.gr6_cb.config(values=builds, state="readonly")
+
+    def run(self):
+        """Step 3: RUN pressed -> build the two paths, verify them, then
+        move focus to the CMD window."""
+        # --- Validate the selections ---
+        if not self.build_root:
+            messagebox.showwarning("Missing", "Select a build area first.")
+            return
+
+        build_type = self.type_var.get()    # e.g. "Release"
+        gr5 = self.gr5_var.get()            # e.g. "Build_100"
+        gr6 = self.gr6_var.get()            # e.g. "Build_102"
+        if not (build_type and gr5 and gr6):
+            messagebox.showwarning(
+                "Missing", "Select build type, GR5 build and GR6 build.")
+            return
+        # Comparing a build with itself is allowed, but ask first.
+        if gr5 == gr6:
+            if not messagebox.askyesno(
+                "Same build",
+                "GR5 and GR6 are the same build. Continue anyway?",
+            ):
+                return
+
+        # --- Construct the full paths ---
+        # e.g. D:\Builds\Release\Build_100
+        gr5_path = os.path.join(self.build_root, build_type, gr5)
+        gr6_path = os.path.join(self.build_root, build_type, gr6)
+
+        # --- Make sure both folders really exist ---
+        for label, p in (("GR5", gr5_path), ("GR6", gr6_path)):
+            if not os.path.isdir(p):
+                messagebox.showerror(
+                    "Path not found",
+                    "{0} path does not exist:\n{1}".format(label, p))
+                return
+
+        # --- Hand over to the CMD window ---
+        # Show the CMD window and give it focus; from here on, everything
+        # is printed there. The GUI stays open in the background.
+        if HIDE_CONSOLE:
+            focus_console()
+
+        self.log("RUN clicked.")
+        self.log("gr5_path = {0}".format(gr5_path))
+        self.log("gr6_path = {0}".format(gr6_path))
+        self.log("Paths verified.")
+
+        # >>> MODIFY: put your GR5 vs GR6 comparison / launch code here.
+        #     Use gr5_path and gr6_path directly. Use print("...") or
+        #     self.log("...") to report progress in the CMD window.
+        #     Note: long-running code here freezes the GUI until it
+        #     finishes (run it in a thread if that matters).
+
+    def on_close(self):
+        """Close the window."""
+        self.log("Closing application.")
+        self.root.destroy()
+
+
+# ============================================================================
+# Entry point
+# ============================================================================
+if __name__ == "__main__":
+    # Hide the CMD window so only the GUI is visible. It is shown again
+    # (and focused) when RUN is pressed, and always when the GUI closes.
+    if HIDE_CONSOLE:
+        set_console_visible(False)
+    try:
+        root = tk.Tk()
+        GR5vsGR6App(root)
+        root.mainloop()
+    finally:
+        # Always make sure the CMD window is visible once the GUI is closed
+        # (also if the program crashes, so you can read the error).
+        if HIDE_CONSOLE:
+            set_console_visible(True)
